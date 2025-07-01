@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: req-back
+spec:
+  replicas: {{.Values.replicaCount}}
+  selector:
+    matchLabels:
+      app: req-back
+  template:
+    metadata:
+      labels:
+        app: req-back
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox
+          command: ['sh', '-c', 'until nc -z {{ .Values.services.db.name }} {{ .Values.services.db.port }}; do echo waiting for db; sleep 2; done']
+      containers:
+        - name: req-back
+          image: "{{.Values.image.back.repository}}:{{.Values.image.back.tag}}"
+          resources: {{.Values.resources | toYaml | nindent 12}}
+          ports:
+            - containerPort: {{.Values.services.back.port}}
+          env:
+            - name: DB_HOST
+              value: {{.Values.services.db.name | quote}}
+            - name: DB_PORT
+              value: "{{.Values.services.db.port}}"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets  
+                  key: root-password  
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: db-name
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.services.back.name}}
+spec:
+  type: ClusterIP
+  selector:
+    app: req-back
+  ports:
+    - port: {{.Values.services.back.port}}
+      targetPort: {{.Values.services.back.port}}

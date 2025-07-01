@@ -1,0 +1,7 @@
+port: "8000"
+db:
+  host: "req-db"
+  port: "3308"
+  username: "root"
+  password: "123123"
+  dbname: "request_manager"

@@ -1,0 +1,7 @@
+FROM mysql:8.0.41-oraclelinux9
+LABEL "Project"="request-manager"
+LABEL "Author"="Illia Kuchuk"
+
+COPY db_backup.sql /docker-entrypoint-initdb.d/
+COPY init.sh /docker-entrypoint-initdb.d/init.sh
+RUN chmod +x /docker-entrypoint-initdb.d/init.sh
