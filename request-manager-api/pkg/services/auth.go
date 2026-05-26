@@ -5,17 +5,35 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"log"
+	"os"
 	Request_Manager "request_manager_api"
 	"request_manager_api/pkg/repository"
 	"sync"
 	"time"
 )
 
-const (
-	salt       = "dfjaklsjlk343298hkjha"
-	signingKey = "wdfsjklfsdYWFD##567Fs"
-	tokenTTL   = 1 * time.Hour
+var (
+	salt       string
+	signingKey string
 )
+
+const (
+	tokenTTL = 1 * time.Hour
+)
+
+func init() {
+	// Load secrets from environment variables
+	signingKey = os.Getenv("JWT_SIGNING_KEY")
+	salt = os.Getenv("PASSWORD_SALT")
+
+	if signingKey == "" {
+		log.Fatal("JWT_SIGNING_KEY environment variable is not set")
+	}
+	if salt == "" {
+		log.Fatal("PASSWORD_SALT environment variable is not set")
+	}
+}
 
 type tokenClaims struct {
 	jwt.StandardClaims
@@ -42,8 +60,8 @@ func (s *AuthService) IsTokenValid(token string) bool {
 
 func NewAuthService(repo repository.Authorization) *AuthService {
 	return &AuthService{
-	    repo: repo,
-	    blacklist: make(map[string]time.Time),
+		repo:      repo,
+		blacklist: make(map[string]time.Time),
 	}
 }
 
