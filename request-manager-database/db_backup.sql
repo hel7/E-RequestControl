@@ -38,7 +38,7 @@ VALUES (
            'Manager',
            'admin@requestmanager.com',
            'requestmanager_admin',
-           'a4dee544b7cac6452eb3e7dc13ebedb058e5b0a6842aba2980922a92108fce25',
+           '$2a$10$2juXrt2Llfr9zNwkGZlmqeZRwtU/RWfS1CmQRuxjwXglSe9ORWV/C',
            1
        );
 
