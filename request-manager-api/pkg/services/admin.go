@@ -23,7 +23,13 @@ func (s *AdministratorService) CreateUser(user Request_Manager.User) (int, error
 	if err := user.ValidateEmail(); err != nil {
 		return 0, err
 	}
-	user.Password = generatePasswordHash(user.Password)
+
+	hashedPassword, err := generatePasswordHash(user.Password)
+	if err != nil {
+		return 0, err
+	}
+	user.Password = hashedPassword
+
 	return s.repo.CreateUser(user)
 }
 func (s *AdministratorService) UpdateUser(UserID int, input Request_Manager.UpdateUserInput, user Request_Manager.User) error {
@@ -41,7 +47,11 @@ func (s *AdministratorService) UpdateUser(UserID int, input Request_Manager.Upda
 		if err := user.ValidatePassword(); err != nil {
 			return err
 		}
-		hashed := generatePasswordHash(*input.Password)
+
+		hashed, err := generatePasswordHash(*input.Password)
+		if err != nil {
+			return err
+		}
 		input.Password = &hashed
 	}
 	return s.repo.UpdateUser(UserID, input, user)

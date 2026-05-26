@@ -1,10 +1,9 @@
 package services
 
 import (
-	"crypto/sha256"
 	"errors"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
 	Request_Manager "request_manager_api"
@@ -14,7 +13,6 @@ import (
 )
 
 var (
-	salt       string
 	signingKey string
 )
 
@@ -25,13 +23,8 @@ const (
 func init() {
 	// Load secrets from environment variables
 	signingKey = os.Getenv("JWT_SIGNING_KEY")
-	salt = os.Getenv("PASSWORD_SALT")
-
 	if signingKey == "" {
 		log.Fatal("JWT_SIGNING_KEY environment variable is not set")
-	}
-	if salt == "" {
-		log.Fatal("PASSWORD_SALT environment variable is not set")
 	}
 }
 
@@ -72,7 +65,11 @@ func (s *AuthService) CreateUser(user Request_Manager.User) (int, error) {
 	if err := user.ValidateEmail(); err != nil {
 		return 0, err
 	}
-	user.Password = generatePasswordHash(user.Password)
+	hashedPassword, err := generatePasswordHash(user.Password)
+	if err != nil {
+		return 0, err
+	}
+	user.Password = hashedPassword
 	return s.repo.CreateUser(user)
 }
 
@@ -83,14 +80,22 @@ func (s *AuthService) CreateAdmin(user Request_Manager.User) (int, error) {
 	if err := user.ValidateEmail(); err != nil {
 		return 0, err
 	}
-	user.Password = generatePasswordHash(user.Password)
+	hashedPassword, err := generatePasswordHash(user.Password)
+	if err != nil {
+		return 0, err
+	}
+	user.Password = hashedPassword
 	return s.repo.CreateAdmin(user)
 }
 
 func (s *AuthService) GenerateToken(username, password string) (string, error) {
-	user, err := s.repo.GetUser(username, generatePasswordHash(password))
+	user, err := s.repo.GetUserByUsername(username)
 	if err != nil {
 		return "", err
+	}
+
+	if err := comparePassword(user.Password, password); err != nil {
+		return "", errors.New("invalid credentials")
 	}
 
 	claims := tokenClaims{
@@ -162,8 +167,13 @@ func (s *AuthService) ParseToken(accessToken string) (int, int, error) {
 	return claims.UserID, claims.RoleID, nil
 }
 
-func generatePasswordHash(password string) string {
-	hash := sha256.New()
-	hash.Write([]byte(password + salt))
-	return fmt.Sprintf("%x", hash.Sum(nil))
+func generatePasswordHash(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+func comparePassword(hashedPassword string, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }

@@ -60,3 +60,10 @@ func (r *AuthMysql) GetUser(username, password string) (Request_Manager.User, er
 	err := r.db.Get(&user, query, username, password)
 	return user, err
 }
+
+func (r *AuthMysql) GetUserByUsername(username string) (Request_Manager.User, error) {
+	var user Request_Manager.User
+	query := "SELECT UserID, Username, Password, RoleID FROM User WHERE Username=?"
+	err := r.db.Get(&user, query, username)
+	return user, err
+}
