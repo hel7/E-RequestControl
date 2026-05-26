@@ -1,0 +1,46 @@
+replicaCount: 1
+
+image:
+  back:
+    repository: zyzelq/req-back
+    tag: local
+  front:
+    repository: zyzelq/req-front
+    tag: local
+  db:
+    repository: zyzelq/req-db
+    tag: v1
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+db:
+  rootPassword: "123123"
+  database: "request_manager"
+  pvc:
+    storage: "5Gi"
+
+services:
+  back:
+    name: req-back-service
+    port: 8000
+  front:
+    name: req-front-service
+    port: 80
+    nodePort: 30000
+  db:
+    name: req-db
+    port: 3306
+
+ingress:
+  enabled: true
+  name: req-ingress
+  className: nginx
+  backendpath: "/"
+  backendHost: "api.frontend.local"
+  frontendHost: "frontend.local"

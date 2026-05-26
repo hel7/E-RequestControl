@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  app:
+    build: ./request-manager-api
+    container_name: req-back
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    networks:
+      - my-network
+
+  db:
+    build: ./request-manager-database
+    container_name: req-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - my-network
+
+  frontend:
+    build: ./request-manager-ui
+    container_name: req-front
+    ports:
+      - "5173:5173"
+    depends_on:
+      - app
+    networks:
+      - my-network
+    environment:
+      - VUE_APP_I18N_LOCALE=ua
+      - VUE_APP_I18N_FALLBACK_LOCALE=en
+
+volumes:
+  mysql-data:
+
+networks:
+  my-network:
+    driver: bridge

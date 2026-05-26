@@ -1,0 +1,16 @@
+# Используем официальный образ Node.js
+FROM node:20-alpine
+LABEL "Project"="request-manager"
+LABEL "Author"="Illia Kuchuk"
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm install
+RUN npm install vue-i18n@9
+RUN npm install vue-toastification@next
+
+COPY . .
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "--open=false"]

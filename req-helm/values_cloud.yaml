@@ -1,0 +1,75 @@
+replicaCount: 1
+
+image:
+  back:
+    repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-backend
+    tag: latest
+  front:
+    repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-frontend
+    tag: latest
+  db:
+    repository: 529088291614.dkr.ecr.us-east-1.amazonaws.com/e-requestcontrol-db
+    tag: latest
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+
+db:
+  pvc:
+    storage: "5Gi"
+
+services:
+  back:
+    name: req-back-service
+    port: 8000
+  front:
+    name: req-front-service
+    port: 80
+  db:
+    name: req-db
+    port: 3306
+
+ingress:
+  enabled: true
+  name: req-ingress
+  className: nginx
+  backendHost: "www.zyzel.de"
+  frontendHost: "www.zyzel.de"
+  certificateArn: "arn:aws:acm:us-east-1:529088291614:certificate/99698458-3848-4cd0-a30d-5fbf7c961ddd"
+  grafanaHost: grafana.zyzel.de
+
+loki:
+  image:
+    tag: "2.8.0"
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+promtail:
+  enabled: true
+  image:
+    tag: "2.8.0"
+  config:
+    snippets:
+      pipelineStages:
+        - docker: {}
+
+grafana:
+  enabled: true
+  image:
+    tag: "10.2.3"
+  sidecar:
+    datasources:
+      enabled: true
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+

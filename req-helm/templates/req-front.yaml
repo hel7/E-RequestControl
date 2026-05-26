@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: req-front
+spec:
+  replicas: {{.Values.replicaCount}}
+  selector:
+    matchLabels:
+      app: req-front
+  template:
+    metadata:
+      labels:
+        app: req-front
+    spec:
+      containers:
+        - name: req-front
+          image: "{{.Values.image.front.repository}}:{{.Values.image.front.tag}}"
+          resources: {{.Values.resources | toYaml | nindent 12}}
+          ports:
+            - containerPort: 5173
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Values.services.front.name}}
+spec:
+  type: LoadBalancer
+  selector:
+    app: req-front
+  ports:
+    - port: {{.Values.services.front.port}}
+      targetPort: 5173
+      nodePort: {{.Values.services.front.nodePort}}
