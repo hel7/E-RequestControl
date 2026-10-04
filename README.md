@@ -1,53 +1,75 @@
-## System Overview
+# E-RequestControl — Enterprise Request Management System
 
-The primary needs of the administrator include:
+A full-stack multi-container web application designed for electronic request submission, lifecycle tracking, and administrative governance.
 
-* Viewing, deleting, and editing requests;
-* Viewing and deleting notifications;
-* Managing system users: creating, editing, deleting, and viewing user accounts;
-* Data management: exporting data, creating backups of database settings and data, and restoring backups.
-
-The primary needs of the user include:
-
-* Creating, viewing, editing, and deleting requests;
-* Viewing and deleting notifications.
+[![Go](https://img.shields.io/badge/Go-1.22-386641?style=for-the-badge&logo=go&logoColor=white)](https://golang.org/)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.x-386641?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-386641?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-386641?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![REST API](https://img.shields.io/badge/REST-API-386641?style=for-the-badge)](https://en.wikipedia.org/wiki/REST)
 
 ---
 
-## System Architecture
+## 🏗 System Architecture
 
-The server-side architecture of the software is built according to the principles of the three-tier model. It consists of:
+The application is built using a decoupled client-server architecture with a three-tier Go backend (Handler → Service → Repository), ensuring strict Separation of Concerns (SoC).
 
-* HTTP request handling layer (Handler);
-* Business logic layer (Service);
-* Data access layer (Repository).
-
-This architectural approach ensures clear separation of responsibilities, simplifies maintenance and scalability, and improves system stability.
+```mermaid
+graph TD
+    Client[Web Browser / Client] -->|HTTP / JSON| UI[Vue.js Frontend Container :5173]
+    Client -->|REST API Requests| API[Go Gin API Container :8000]
+    
+    subgraph Backend Architecture
+        API --> Handlers[HTTP Handlers & Middleware]
+        Handlers --> Auth[JWT Auth & RBAC Engine]
+        Handlers --> Services[Business Logic Layer]
+        Services --> Repositories[Data Access Layer]
+    end
+    
+    Repositories -->|TCP / SQL Queries| DB[(MySQL Database Container :3306)]
+    
+    subgraph Automated Testing & QA
+        QA[Black-Box API Test Suite] -.->|Postman Test Scenarios| API
+    end
+```
 
 ---
 
-## Backend Implementation
+## 🛠 Core Modules & Features
 
-The server-side was developed using the Go programming language, which is known for its high performance, maintainability, and support for concurrent execution.
-
-The main responsibilities of the backend server include:
-
-* Processing client requests;
-* Implementing business logic for request management;
-* Interacting with the database;
-* Providing reliable responses for each request.
+- **Authentication & RBAC:** JWT token-based authentication with role verification (User vs Administrator access).
+- **Request Lifecycle Management:** Full CRUD operations for electronic submissions with structured state transitions.
+- **Notification Engine:** Event-driven notification delivery updating users on ticket progression.
+- **Administrative Control:** User account management, database backup generation, and export capabilities.
+- **Containerized Networking:** Fully isolated local bridge network with internal DNS service discovery between services.
 
 ---
 
-## API Testing
+## 🚀 Quick Start (Local Deployment)
 
-To verify the correct functionality of the REST API, testing was performed using Postman.
+### Prerequisites
+- Docker Engine & Docker Compose installed.
 
-A set of test scenarios was created to validate:
+### Execution
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/hel7/E-RequestControl.git
+   cd E-RequestControl
+   ```
 
-* Correct handling of HTTP requests;
-* Data format validation;
-* System behavior in error scenarios;
-* Compliance of HTTP status codes with REST standards.
+2. Start the multi-container environment:
+   ```bash
+   docker compose up -d --build
+   ```
 
-This approach helped identify potential logical errors at early development stages and ensured that the API behavior matched the expected functionality.
+3. Access endpoints:
+   - **Frontend UI:** `http://localhost:5173`
+   - **Backend API:** `http://localhost:8000/api`
+   - **Database Port:** `localhost:3308` (mapped to internal `:3306`)
+
+---
+
+## 🧪 Quality Assurance & Security Validation
+
+The API underwent black-box validation covering boundary conditions, negative testing, and access control audit:
+- Detailed test cases and vulnerability reports are documented in the [QA Directory](./QA).
