@@ -1,4 +1,4 @@
-# E-RequestControl — Enterprise Request Management System
+# E-RequestControl — Electronic Request Management System
 
 A full-stack multi-container web application designed for electronic request submission, lifecycle tracking, and administrative governance.
 
