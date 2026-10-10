@@ -17,7 +17,7 @@ spec:
           image: "{{.Values.image.front.repository}}:{{.Values.image.front.tag}}"
           resources: {{.Values.resources | toYaml | nindent 12}}
           ports:
-            - containerPort: 5173
+            - containerPort: 80
 
 ---
 apiVersion: v1
@@ -25,10 +25,9 @@ kind: Service
 metadata:
   name: {{.Values.services.front.name}}
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: req-front
   ports:
     - port: {{.Values.services.front.port}}
-      targetPort: 5173
-      nodePort: {{.Values.services.front.nodePort}}
+      targetPort: 80

@@ -152,6 +152,7 @@ jobs:
           kubectl create secret generic db-secrets \
             --from-literal=root-password="${{ secrets.DB_ROOT_PASSWORD }}" \
             --from-literal=db-name="${{ secrets.DB_NAME }}" \
+            --from-literal=jwt-signing-key="${{ secrets.JWT_SIGNING_KEY }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Install Cert-Manager

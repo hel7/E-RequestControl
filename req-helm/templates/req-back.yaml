@@ -39,6 +39,11 @@ spec:
                 secretKeyRef:
                   name: db-secrets
                   key: db-name
+            - name: JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: jwt-signing-key
 
 ---
 apiVersion: v1
