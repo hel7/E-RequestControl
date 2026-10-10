@@ -1,8 +1,8 @@
 import axios from "axios";
+import { useAuthStore } from "./store/auth";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:8000/api",
-  allowedHosts: ["frontend.local","zyzel.de","https://zyzel.de/api","https://www.zyzel.de/api"],
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -31,8 +31,8 @@ apiClient.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
-      !originalRequest.url.includes("/auth/logout") &&
-      !originalRequest.url.includes("/auth/login")
+      !originalRequest.url?.includes("/auth/logout") &&
+      !originalRequest.url?.includes("/auth/login")
     ) {
       const authStore = useAuthStore();
       await authStore.logout();
@@ -48,14 +48,6 @@ export const authApi = {
   logout: () => apiClient.post("/auth/logout"),
   register: (firstname, lastname, email, username, password) =>
     apiClient.post("/auth/register", {
-      firstname,
-      lastname,
-      email,
-      username,
-      password,
-    }),
-  registerAdmin: (firstname, lastname, email, username, password) =>
-    apiClient.post("/auth/registerAdmin", {
       firstname,
       lastname,
       email,

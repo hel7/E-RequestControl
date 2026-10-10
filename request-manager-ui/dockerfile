@@ -1,16 +1,18 @@
-# Используем официальный образ Node.js
-FROM node:20-alpine
-LABEL "Project"="request-manager"
-LABEL "Author"="Illia Kuchuk"
+# Build Stage
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install
-RUN npm install vue-i18n@9
-RUN npm install vue-toastification@next
+RUN npm ci || npm install
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# Production Stage
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["npm", "run", "dev", "--", "--host", "--open=false"]
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

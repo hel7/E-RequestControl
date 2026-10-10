@@ -38,7 +38,7 @@ services:
     build: ./request-manager-ui
     container_name: req-front
     ports:
-      - "5173:5173"
+      - "5173:80"
     depends_on:
       - app
     networks:
