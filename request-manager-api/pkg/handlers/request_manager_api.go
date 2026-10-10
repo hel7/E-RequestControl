@@ -316,9 +316,8 @@ func (h *Handlers) deleteNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Notification deleted"})
 }
 func (h *Handlers) backupData(c *gin.Context) {
-	backupFile := "/root/backup_" + time.Now().Format("20060102_150405") + ".sql"
-
-	if err := os.MkdirAll("/root", os.ModePerm); err != nil {
+	backupDir := filepath.Join(os.TempDir(), "backups")
+	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		log.Printf("Failed to create backup directory: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to create backup directory",
@@ -326,6 +325,8 @@ func (h *Handlers) backupData(c *gin.Context) {
 		})
 		return
 	}
+
+	backupFile := filepath.Join(backupDir, "backup_"+time.Now().Format("20060102_150405")+".sql")
 
 	if err := h.service.Admin.BackupData(backupFile); err != nil {
 		log.Printf("Backup failed: %v", err)
@@ -341,10 +342,8 @@ func (h *Handlers) backupData(c *gin.Context) {
 	c.File(backupFile)
 
 	go func() {
-		time.Sleep(2 * time.Second)
-		if err := os.Remove(backupFile); err != nil {
-			log.Printf("Failed to remove backup file: %v", err)
-		}
+		time.Sleep(30 * time.Second)
+		_ = os.Remove(backupFile)
 	}()
 }
 
@@ -383,15 +382,24 @@ func (h *Handlers) restoreData(c *gin.Context) {
 }
 
 func (h *Handlers) exportData(c *gin.Context) {
-	exportPath := "export.xlsx"
+	tempFile, err := os.CreateTemp("", "export-*.xlsx")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create temp file"})
+		return
+	}
+	exportPath := tempFile.Name()
+	tempFile.Close()
+	defer os.Remove(exportPath)
 
 	if err := h.service.Admin.ExportData(exportPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to export data"})
 		return
 	}
+	c.Header("Content-Disposition", "attachment; filename=export.xlsx")
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.File(exportPath)
-	c.JSON(http.StatusOK, gin.H{"message": "Data export successful"})
 }
+
 func (h *Handlers) importData(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -399,13 +407,21 @@ func (h *Handlers) importData(c *gin.Context) {
 		return
 	}
 
-	uploadPath := file.Filename
-	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
+	tempFile, err := os.CreateTemp("", "import-*.xlsx")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create temp file"})
+		return
+	}
+	tempPath := tempFile.Name()
+	tempFile.Close()
+	defer os.Remove(tempPath)
+
+	if err := c.SaveUploadedFile(file, tempPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
 		return
 	}
 
-	if err := h.service.Admin.ImportData(uploadPath); err != nil {
+	if err := h.service.Admin.ImportData(tempPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

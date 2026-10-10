@@ -304,16 +304,17 @@ func (r *AdminMysql) ExportData(exportPath string) error {
 			logger.Errorf("Error querying table %s: %s", tableName, err)
 			return fmt.Errorf("error querying table %s: %w", tableName, err)
 		}
-		defer rows.Close()
 
 		columns, err := rows.Columns()
 		if err != nil {
+			rows.Close()
 			logger.Errorf("Error fetching columns for table %s: %s", tableName, err)
 			return fmt.Errorf("error fetching columns for table %s: %w", tableName, err)
 		}
 
 		sheet, err := file.AddSheet(tableName)
 		if err != nil {
+			rows.Close()
 			logger.Errorf("Error adding sheet %s: %s", tableName, err)
 			return fmt.Errorf("error adding sheet %s: %w", tableName, err)
 		}
@@ -333,6 +334,7 @@ func (r *AdminMysql) ExportData(exportPath string) error {
 
 			err := rows.Scan(valuePointers...)
 			if err != nil {
+				rows.Close()
 				logger.Errorf("Error scanning rows for table %s: %s", tableName, err)
 				return fmt.Errorf("error scanning rows for table %s: %w", tableName, err)
 			}
@@ -347,6 +349,7 @@ func (r *AdminMysql) ExportData(exportPath string) error {
 				}
 			}
 		}
+		rows.Close()
 	}
 
 	err := file.Save(exportPath)
@@ -358,6 +361,26 @@ func (r *AdminMysql) ExportData(exportPath string) error {
 	return nil
 }
 
+var allowedTables = map[string]map[string]bool{
+	"User": {
+		"UserID": true, "FirstName": true, "LastName": true, "Email": true,
+		"Username": true, "Password": true, "RoleID": true, "CreatedAt": true, "UpdatedAt": true,
+	},
+	"Role": {
+		"RoleID": true, "RoleName": true, "CreatedAt": true, "UpdatedAt": true,
+	},
+	"TicketStatus": {
+		"StatusID": true, "Status": true, "CreatedAt": true, "UpdatedAt": true,
+	},
+	"Ticket": {
+		"TicketID": true, "Title": true, "Description": true, "StatusID": true,
+		"CreatedAt": true, "UpdatedAt": true, "AssignedTo": true, "UserID": true,
+	},
+	"Notification": {
+		"NotificationID": true, "Message": true, "UserID": true, "CreatedAt": true,
+	},
+}
+
 func (r *AdminMysql) ImportData(importPath string) error {
 	file, err := xlsx.OpenFile(importPath)
 	if err != nil {
@@ -367,18 +390,27 @@ func (r *AdminMysql) ImportData(importPath string) error {
 
 	for _, sheet := range file.Sheets {
 		tableName := sheet.Name
+		allowedCols, ok := allowedTables[tableName]
+		if !ok {
+			logrus.Warnf("Skipping unrecognized table/sheet: %s", tableName)
+			continue
+		}
 
 		rows := sheet.Rows
 		if len(rows) < 2 {
 			continue
 		}
 
-		columns := make([]string, len(rows[0].Cells))
-		for i, cell := range rows[0].Cells {
-			columns[i] = cell.String()
+		columns := make([]string, 0, len(rows[0].Cells))
+		for _, cell := range rows[0].Cells {
+			colName := strings.TrimSpace(cell.String())
+			if !allowedCols[colName] {
+				return fmt.Errorf("invalid or disallowed column '%s' for table '%s'", colName, tableName)
+			}
+			columns = append(columns, fmt.Sprintf("`%s`", colName))
 		}
 
-		query := fmt.Sprintf("INSERT IGNORE INTO %s (%s) VALUES ", tableName, strings.Join(columns, ","))
+		query := fmt.Sprintf("INSERT IGNORE INTO `%s` (%s) VALUES ", tableName, strings.Join(columns, ","))
 
 		var valueStrings []string
 		var valueArgs []interface{}
