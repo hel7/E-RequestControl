@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"github.com/jmoiron/sqlx"
 	Request_Manager "request_manager_api"
 )
@@ -46,6 +47,16 @@ func (r *NotificationMysql) Delete(notificationID int) error {
 }
 func (r *NotificationMysql) MarkNotificationAsRead(notificationID, userID int) error {
 	query := "DELETE FROM Notification WHERE NotificationID = ? AND UserID=?"
-	_, err := r.db.Exec(query, notificationID, userID)
-	return err
+	result, err := r.db.Exec(query, notificationID, userID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("notification not found or does not belong to user")
+	}
+	return nil
 }

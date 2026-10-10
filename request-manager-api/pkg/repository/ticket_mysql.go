@@ -108,6 +108,10 @@ func (r *TicketMysql) UpdateTicket(userID int, ticketID int, input Request_Manag
 		return err
 	}
 
+	if existingTicket.UserID != userID {
+		return errors.New("access denied: ticket does not belong to user")
+	}
+
 	if input.Title != nil {
 		existingTicket.Title = *input.Title
 	}
@@ -132,8 +136,19 @@ func (r *TicketMysql) UpdateTicket(userID int, ticketID int, input Request_Manag
 		statusID = int(statusID64)
 	}
 
-	query := `UPDATE Ticket SET Title=?, Description=?, AssignedTo=?, StatusID=?, UpdatedAt=? WHERE TicketID=?`
-	_, err = r.db.Exec(query, existingTicket.Title, existingTicket.Description, existingTicket.AssignedTo, statusID, updatedAt, ticketID)
+	query := `UPDATE Ticket SET Title=?, Description=?, AssignedTo=?, StatusID=?, UpdatedAt=? WHERE TicketID=? AND UserID=?`
+	res, err := r.db.Exec(query, existingTicket.Title, existingTicket.Description, existingTicket.AssignedTo, statusID, updatedAt, ticketID, userID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("ticket not found or access denied")
+	}
 
 	notificationMessage := "Оновлено тікет"
 

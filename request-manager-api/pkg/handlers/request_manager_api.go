@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	Request_Manager "request_manager_api"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -126,6 +127,14 @@ func (h *Handlers) updateTicket(c *gin.Context) {
 
 	err = h.service.Ticket.UpdateTicket(userID, id, input)
 	if err != nil {
+		if strings.Contains(err.Error(), "access denied") {
+			newErrorResponse(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if strings.Contains(err.Error(), "not found") {
+			newErrorResponse(c, http.StatusNotFound, err.Error())
+			return
+		}
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -149,6 +158,10 @@ func (h *Handlers) deleteTicket(c *gin.Context) {
 	}
 
 	if err := h.service.Ticket.DeleteUserTicket(ticketID, userID); err != nil {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "does not belong") {
+			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
@@ -185,6 +198,10 @@ func (h *Handlers) markNotificationAsRead(c *gin.Context) {
 
 	err = h.service.Notification.MarkNotificationAsRead(notificationID, userID)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "does not belong") {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to mark notification as read"})
 		return
 	}

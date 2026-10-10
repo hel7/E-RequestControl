@@ -26,21 +26,7 @@ func (h *Handlers) register(c *gin.Context) {
 		"UserID": id,
 	})
 }
-func (h *Handlers) registerAdmin(c *gin.Context) {
-	var input Request_Manager.User
-	if err := c.BindJSON(&input); err != nil {
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	id, err := h.service.Authorization.CreateAdmin(input)
-	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"AdminID": id,
-	})
-}
+
 func (h *Handlers) login(c *gin.Context) {
 	var input registrationInput
 	if err := c.BindJSON(&input); err != nil {
