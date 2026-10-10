@@ -1,4 +1,6 @@
 import { createI18n } from 'vue-i18n';
+import ua from './locales/ua.json';
+import en from './locales/en.json';
 
 const defaultLocale = localStorage.getItem('locale') || 'ua';
 
@@ -6,20 +8,16 @@ const i18n = createI18n({
     legacy: false,
     locale: defaultLocale,
     fallbackLocale: 'en',
-    messages: {}
+    messages: {
+        ua,
+        en,
+    },
 });
 
-const loadLocaleMessages = async (locale) => {
-    try {
-        const messages = await import(`./locales/${locale}.json`);
-        i18n.global.setLocaleMessage(locale, messages.default);
-        i18n.global.locale.value = locale;
-    } catch (e) {
-        console.error(`Failed to load locale (${locale}):`, e);
-    }
+const loadLocaleMessages = (locale) => {
+    i18n.global.locale.value = locale;
+    localStorage.setItem('locale', locale);
 };
-
-await loadLocaleMessages(defaultLocale);
 
 export { i18n, loadLocaleMessages };
 export default i18n;

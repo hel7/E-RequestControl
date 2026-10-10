@@ -5,11 +5,12 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 5173,
-    open: true,
-    allowedHosts: ["www.zyzel.de"],
-
+    open: false,
+  },
+  build: {
+    target: "esnext",
   },
   json: {
-    stringify: true
-  }
+    stringify: true,
+  },
 });
