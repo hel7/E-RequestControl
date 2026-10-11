@@ -36,15 +36,15 @@ func (s *AdministratorService) UpdateUser(UserID int, input Request_Manager.Upda
 	if err := input.Validate(); err != nil {
 		return err
 	}
-	if err := user.ValidateEmail(); err != nil {
-		return err
-	}
-	if err := user.ValidatePassword(); err != nil {
-		return err
+	if input.Email != nil {
+		checkUser := Request_Manager.User{Email: *input.Email}
+		if err := checkUser.ValidateEmail(); err != nil {
+			return err
+		}
 	}
 	if input.Password != nil {
-		user.Password = *input.Password
-		if err := user.ValidatePassword(); err != nil {
+		checkUser := Request_Manager.User{Password: *input.Password}
+		if err := checkUser.ValidatePassword(); err != nil {
 			return err
 		}
 

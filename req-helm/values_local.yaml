@@ -20,7 +20,7 @@ resources:
     memory: "1Gi"
 
 db:
-  rootPassword: "123123"
+  rootPassword: ""
   database: "request_manager"
   pvc:
     storage: "5Gi"

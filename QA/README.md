@@ -41,48 +41,52 @@ Detailed step-by-step test case documentation (Preconditions / Steps / Expected 
 
 ---
 
-## Bug Reports
+## Bug Reports & Resolution Status
 
 ### BUG-001 — Broken Access Control on Ticket Update (IDOR)
 | Field | Details |
 |---|---|
 | **Severity** | Critical |
 | **Priority** | High |
+| **Status** | **RESOLVED** (fixed in commit `e6622e1` via ownership validation) |
 | **Environment** | Local, API level (Postman). Not exposed via UI. |
 | **Steps to Reproduce** | 1. Log in as User1, create a ticket, note the ticket ID.<br>2. Log in as User2.<br>3. Send `PUT /api/tickets/{User1_ticket_id}` using User2's token.<br>4. Send the request. |
 | **Expected Result** | `403 Forbidden` — a user should not be able to modify tickets they don't own. |
-| **Actual Result** | `200 OK` — ticket successfully updated by a non-owner. |
+| **Actual Result** | `200 OK` (prior to fix) — ticket successfully updated by a non-owner. |
 
 ### BUG-002 — Incorrect Status Code on Unauthorized Ticket Deletion
 | Field | Details |
 |---|---|
 | **Severity** | Medium |
 | **Priority** | Medium |
+| **Status** | **RESOLVED** (fixed in commit `e6622e1` with proper HTTP 404/403 status handling) |
 | **Environment** | Local, API level (Postman) |
 | **Steps to Reproduce** | 1. Log in as User1, create a ticket, note the ticket ID.<br>2. Log in as User2.<br>3. Send `DELETE /api/tickets/{User1_ticket_id}` using User2's token. |
 | **Expected Result** | `403 Forbidden` or `404 Not Found`, with a clear error message. |
-| **Actual Result** | `500 Internal Server Error`, message: `"ticket not found or does not belong to user"`. Access control works, but the error is surfaced as a server crash rather than a handled response. |
+| **Actual Result** | `500 Internal Server Error`, message: `"ticket not found or does not belong to user"`. |
 
 ### BUG-003 — Unauthenticated Admin Account Creation (Critical)
 | Field | Details |
 |---|---|
 | **Severity** | Critical |
 | **Priority** | High |
+| **Status** | **RESOLVED** (fixed in commit `e6622e1` by removing unauthenticated `/registerAdmin` route) |
 | **Environment** | Local, API level (Postman) |
 | **Steps to Reproduce** | 1. Send `POST /api/auth/registerAdmin` with a valid user body.<br>2. Do **not** include an `Authorization` header.<br>3. Send the request. |
 | **Expected Result** | `401 Unauthorized` — this endpoint should require an active admin session to create new admin accounts. |
-| **Actual Result** | `200 OK` — an admin account is created with **no authentication required**. |
-| **Notes** | Root cause: `registerAdmin` is registered in the public `/auth` route group, before the `userIdentity`/`adminRequired` middleware is applied. Suggested fix: remove this endpoint entirely and create admins exclusively through `/api/admin/users` (which already requires admin auth), or add `userIdentity` + `adminRequired` middleware directly to this route. |
+| **Actual Result** | `200 OK` (prior to fix) — an admin account is created with **no authentication required**. |
+| **Resolution** | Removed unauthenticated route. Admin creation is now restricted exclusively to authenticated administrators via `POST /api/admin/users/`. |
 
 ### BUG-004 — Misleading Success Response on Notification Deletion
 | Field | Details |
 |---|---|
 | **Severity** | Medium |
 | **Priority** | Medium |
+| **Status** | **RESOLVED** (fixed in commit `e6622e1` with `RowsAffected` verification) |
 | **Environment** | Local, API level (Postman) |
 | **Steps to Reproduce** | 1. Log in as User A, get a notification ID belonging to User A.<br>2. Log in as User B.<br>3. Send `DELETE /api/notifications/{User_A_notification_id}` using User B's token.<br>4. Check the response, then verify the database state directly. |
 | **Expected Result** | `403 Forbidden` or `404 Not Found`; response should reflect the actual outcome. |
-| **Actual Result** | `200 OK`, message `"marked as read"` — but the record is **not** modified in the database. The API reports success even though nothing happened. |
+| **Actual Result** | `200 OK`, message `"marked as read"` (prior to fix) — but the record was not modified in the database. |
 
 ---
 

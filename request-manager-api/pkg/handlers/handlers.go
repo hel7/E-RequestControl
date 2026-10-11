@@ -21,17 +21,13 @@ func CORSMiddleware() gin.HandlerFunc {
 		allowedOrigins := []string{
 			"http://localhost:5173",
 			"http://localhost:3000",
-			"127.0.0.1",
-			"http://127.0.0.1:",
+			"http://127.0.0.1:5173",
+			"http://127.0.0.1:3000",
 			"http://frontend.local",
-			"http://localhost:5173/api",
 			"http://req-front-service",
 			"http://req-front-service.default.svc.cluster.local",
 			"https://zyzel.de",
-			"https://zyzel.de/api",
-			"https://www.zyzel.de/api",
 			"https://www.zyzel.de",
-			"http://www.zyzel.de/api",
 			"http://www.zyzel.de",
 		}
 

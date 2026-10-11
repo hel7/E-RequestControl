@@ -39,11 +39,9 @@ jobs:
       - name: Setup SonarQube
         uses: warchant/setup-sonar-scanner@v7
 
-      - name: Debug Sonar variables
+      - name: Verify Sonar configuration
         run: |
-          echo "SONAR_ORGANIZATION:${{ secrets.SONAR_ORGANIZATION }}"
-          echo "SONAR_PROJECT_KEY:${{ secrets.SONAR_PROJECT_KEY }}"
-          echo "SONAR_URL:${{ secrets.SONAR_URL }}"
+          echo "SonarQube scanner setup complete"
 
       # Start scanning
       - name: SonarQube Scan

@@ -32,9 +32,9 @@ func (r *TicketMysql) GetUserTickets(userID int) ([]Request_Manager.Ticket, erro
     JOIN TicketStatus ts ON t.StatusID = ts.StatusID
     JOIN User sender ON t.UserID = sender.UserID
     LEFT JOIN User assignee ON t.AssignedTo = assignee.UserID
-    WHERE t.UserID = ?`
+    WHERE (t.UserID = ? OR t.AssignedTo = ?)`
 
-	err := r.db.Select(&tickets, query, userID)
+	err := r.db.Select(&tickets, query, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +84,16 @@ func (r *TicketMysql) CreateTicket(userID int, ticket Request_Manager.Ticket) (i
 		return 0, err
 	}
 
+	targetNotificationUser := ticket.AssignedTo
+	if targetNotificationUser == 0 {
+		targetNotificationUser = userID
+	}
+
 	notificationMessage := "Створено новий тікет"
 
 	notification := Request_Manager.Notification{
 		Message:   notificationMessage,
-		UserID:    userID,
+		UserID:    targetNotificationUser,
 		CreatedAt: getCurrentTimeInUkraine(),
 	}
 

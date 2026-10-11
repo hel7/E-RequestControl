@@ -213,14 +213,14 @@ func (r *AdminMysql) BackupData(backupPath string) error {
 	defer outputFile.Close()
 
 	cmd := exec.Command(
-    	"mysqldump",
-    	"--host="+r.config.Host,
-    	"--port="+r.config.Port,
-    	"--user="+r.config.Username,
-    	"--password="+r.config.Password,
-    	"--skip-ssl",
-    	r.config.Dbname,
-    )
+		"mysqldump",
+		"--host="+r.config.Host,
+		"--port="+r.config.Port,
+		"--user="+r.config.Username,
+		"--skip-ssl",
+		r.config.Dbname,
+	)
+	cmd.Env = append(os.Environ(), "MYSQL_PWD="+r.config.Password)
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -261,14 +261,14 @@ func (r *AdminMysql) RestoreData(backupFile multipart.File) error {
 	defer dumpFile.Close()
 
 	cmd := exec.Command(
-    	"mysql",
-    	"-h", r.config.Host,
-    	"-P", r.config.Port,
-    	"-u", r.config.Username,
-    	"-p"+r.config.Password,
-    	"--skip-ssl",
-    	r.config.Dbname,
-    )
+		"mysql",
+		"-h", r.config.Host,
+		"-P", r.config.Port,
+		"-u", r.config.Username,
+		"--skip-ssl",
+		r.config.Dbname,
+	)
+	cmd.Env = append(os.Environ(), "MYSQL_PWD="+r.config.Password)
 
 	cmd.Stdin = dumpFile
 	var stderr bytes.Buffer
@@ -291,7 +291,7 @@ func (r *AdminMysql) ExportData(exportPath string) error {
 	file := xlsx.NewFile()
 
 	tables := map[string]string{
-		"User":         "SELECT * FROM User;",
+		"User":         "SELECT UserID, FirstName, LastName, Email, Username, RoleID, CreatedAt, UpdatedAt FROM User;",
 		"Role":         "SELECT * FROM Role;",
 		"TicketStatus": "SELECT * FROM TicketStatus;",
 		"Ticket":       "SELECT * FROM Ticket;",

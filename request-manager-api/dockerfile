@@ -16,10 +16,13 @@ RUN apk add --no-cache \
     ca-certificates \
     tzdata \
     mysql-client \
-    bash
+    bash \
+    && addgroup -S appgroup && adduser -S appuser -G appgroup
+
 COPY --from=builder /app/main .
+RUN chown -R appuser:appgroup /app
 
-
+USER appuser
 
 EXPOSE 8000
 
