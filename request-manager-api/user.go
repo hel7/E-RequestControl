@@ -18,15 +18,27 @@ type User struct {
 	UpdatedAt string `json:"UpdatedAt" db:"UpdatedAt"`
 }
 
-type aliasUser User
-
 // MarshalJSON ensures Password is never serialized in API responses
 func (u User) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		aliasUser
-		Password string `json:"-"`
-	}{
-		aliasUser: aliasUser(u),
+	type SafeUser struct {
+		UserID    int    `json:"UserID"`
+		Username  string `json:"Username"`
+		FirstName string `json:"FirstName"`
+		LastName  string `json:"LastName"`
+		Email     string `json:"Email"`
+		RoleID    int    `json:"RoleID"`
+		CreatedAt string `json:"CreatedAt"`
+		UpdatedAt string `json:"UpdatedAt"`
+	}
+	return json.Marshal(SafeUser{
+		UserID:    u.UserID,
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Email:     u.Email,
+		RoleID:    u.RoleID,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
 	})
 }
 
